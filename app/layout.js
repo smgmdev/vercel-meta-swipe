@@ -1,57 +1,51 @@
-import "../styles/globals.css";
-import React from "react";
-import { Inter } from "next/font/google";
-import { fetchSheetSettings } from "../lib/sheetSettings";
+import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+async function getSheetMeta() {
+  try {
+    const res = await fetch(
+      "https://vercel-meta-swipe.vercel.app/api/metadata",
+      { cache: "no-store" }
+    );
 
-export const metadata = {
-  // fallback values – real values will come from Google Sheet
-  title: "Mullana Brand – Swipe to Buy",
-  description: "Swipe to buy curated fashion from Mullana Brand.",
-};
+    if (!res.ok) throw new Error("Failed to load sheet metadata");
+
+    return await res.json();
+  } catch (e) {
+    console.error("Sheet metadata error:", e);
+    return {
+      title: "Default Title",
+      description: "Default description",
+      keywords: "",
+      og_image: "",
+      favicon: "",
+    };
+  }
+}
 
 export async function generateMetadata() {
-  try {
-    const settings = await fetchSheetSettings();
+  const meta = await getSheetMeta();
 
-    const title = settings.title || "Mullana Brand – Swipe to Buy";
-    const description =
-      settings.description ||
-      "Swipe to buy curated fashion from Mullana Brand.";
-    const thumbnail =
-      settings.thumbnail ||
-      "https://corporate.stankeviciusgroup.com/assets/swipe/mbb-thumb.jpg";
-    const themeColor = settings.theme_color || "#000000";
-
-    return {
-      title,
-      description,
-      themeColor,
-      openGraph: {
-        title,
-        description,
-        type: "website",
-        url: "https://your-domain.com",
-        images: [thumbnail],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title,
-        description,
-        images: [thumbnail],
-      },
-    };
-  } catch (error) {
-    console.error("Metadata error:", error);
-    return metadata;
-  }
+  return {
+    title: meta.title,
+    description: meta.description,
+    keywords: meta.keywords,
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      images: [meta.og_image],
+    },
+    icons: {
+      icon: meta.favicon,
+      shortcut: meta.favicon,
+      apple: meta.favicon,
+    },
+  };
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
